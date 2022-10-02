@@ -1,7 +1,11 @@
-Install-Module JWT
-#Import-Module ./JWT/JWT.psm1
+Import-Module ./JWT/JWT.psm1
+# Install-Module JWT
 
 $pfxFile = './keystore-2.p12'
+$Cert = Get-PfxCertificate $pfxFile
+# If you can include the PFX password in the code, you might use the below
+#$Cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($pfxFile, "password")
+
 $oauthProviderUrlBase = 'https://keycloak.localdomain/realms/stigman'
 $stigmanApiUrlBase = 'https://stigman.localdomain/api'
 
@@ -13,20 +17,6 @@ function Read-SMOpenIdConfiguration {
   Invoke-RestMethod -Method GET -Uri $url
 }
 
-function Read-SMDeviceAuth {
-  param (
-    $Uri,
-    $ClientId,
-    $Scopes
-  )
-  $body = @{
-    client_id = $ClientId
-    scope = $Scopes
-  }
-  $contentType = 'application/x-www-form-urlencoded' 
-  Invoke-RestMethod -Method POST -Uri $Uri -body $body -ContentType $contentType
-}
-
 function Read-SMOAuthToken {
   param (
     [Parameter(Mandatory)]
@@ -36,7 +26,9 @@ function Read-SMOAuthToken {
     $DeviceCode,
     $ClientId,
     $ClientSecret,
-    $Uri
+    $Uri,
+    $Cert,
+    $Scopes
   )
   Switch ($GrantType) {
     'device_code' {
@@ -56,9 +48,6 @@ function Read-SMOAuthToken {
       break
     }
     'client_credentials_jwt' {
-      $Cert = Get-PfxCertificate $pfxFile
-      # If you want to put the PFX password in the code, you could use the below
-      #$Cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($pfxFile, "password")
       $json = ConvertTo-Json @{
         iss = $ClientId
         sub = $ClientId
@@ -71,7 +60,7 @@ function Read-SMOAuthToken {
         grant_type = 'client_credentials'
         client_assertion_type = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
         client_assertion = $signed
-        scope = $oauthScopes
+        scope = $Scopes
       }
       break
     }
@@ -115,7 +104,9 @@ try {
   $tokenResponse = Read-SMOAuthToken `
     -Uri $openIdConfiguration.token_endpoint `
     -GrantType "client_credentials_jwt" `
-    -ClientId $oauthClientId
+    -ClientId $oauthClientId `
+    -Cert $Cert `
+    -Scopes $oauthScopes
 }
 catch {
   $_
@@ -124,5 +115,8 @@ Write-Host "Authentication has completed."
 
 $tokenResponse
 
+Write-Host "Requesting user information from STIG Manager."
 Read-SMApiUserInfo -AccessToken $tokenResponse.access_token
+
+Write-Host "Requesting collection information from STIG Manager."
 Read-SMApiCollections -AccessToken $tokenResponse.access_token
