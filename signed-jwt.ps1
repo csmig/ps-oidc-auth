@@ -2,12 +2,12 @@ Import-Module ./JWT/JWT.psm1
 # Install-Module JWT
 
 $pfxFile = './keystore-2.p12'
-$Cert = Get-PfxCertificate $pfxFile
+# $Cert = Get-PfxCertificate $pfxFile
 # If you can include the PFX password in the code, you might use the below
-#$Cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($pfxFile, "password")
+$Cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($pfxFile, "password")
 
-$oauthProviderUrlBase = 'https://keycloak.localdomain/realms/stigman'
-$stigmanApiUrlBase = 'https://stigman.localdomain/api'
+$oauthProviderUrlBase = 'https://stig-manager-auth.azurewebsites.net/auth/realms/stigman'
+$stigmanApiUrlBase = 'https://stig-manager.azurewebsites.net/api'
 
 $oauthClientId = 'stigman-watcher'
 $oauthScopes = "stig-manager:stig:read stig-manager:collection stig-manager:user:read"
