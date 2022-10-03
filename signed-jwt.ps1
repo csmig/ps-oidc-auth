@@ -1,7 +1,7 @@
 Import-Module ./JWT/JWT.psm1
 # Install-Module JWT
 
-$pfxFile = './keystore-2.p12'
+$pfxFile = 'keystore-3.pfx'
 # $Cert = Get-PfxCertificate $pfxFile
 # If you can include the PFX password in the code, you might use the below
 $Cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($pfxFile, "password")
